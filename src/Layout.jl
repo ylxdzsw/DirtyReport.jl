@@ -68,5 +68,55 @@ function (_this::_tokenizer_next)()
 end
 
 function parse_layout(tokens::Tokenizer)
+    chidren = []
 
+    while true
+        next = tokens.next()
+
+        if isa(next, CloseRow) || isa(next, EofToken)
+            if length(chidren) == 1 && isa(chidren[], Element)
+                return chidren[]
+            elseif SplitCol() in chidren
+                result, this = Layout[], Layout[]
+
+                for c in chidren
+                    if isa(c, SplitCol)
+                        if isempty(this)
+                            throw(ParseError("unexpected SplitCol()"))
+                        elseif length(this) == 1
+                            push!(result, this[])
+                        else
+                            push!(result, Col(this))
+                        end
+
+                        this = Layout[]
+                    else
+                        push!(this, c)
+                    end
+                end
+
+                if length(this) == 1
+                    push!(result, this[])
+                elseif length(this) > 1
+                    push!(result, Col(this))
+                end
+
+                return Row(result)
+            else
+                return Col(chidren)
+            end
+        elseif isa(next, StrToken)
+            push!(chidren, Element(next.value, 0))
+        elseif isa(next, NumToken)
+            if isa(chidren[end], Element)
+                chidren[end].dataset = next.value
+            else
+                throw(ParseError("unexpected $next"))
+            end
+        elseif isa(next, OpenRow)
+            push!(chidren, parse_layout(tokens))
+        elseif isa(next, SplitCol)
+            push!(chidren, next)
+        end
+    end
 end
