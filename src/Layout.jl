@@ -37,7 +37,7 @@ type Tokenizer
     next::_tokenizer_next{Tokenizer}
     Tokenizer(code) = begin
         this = new(code, 1)
-        this.next = _tokenizer_next{typeof(this)}(this)
+        this.next = _tokenizer_next{Tokenizer}(this)
         this
     end
 end
